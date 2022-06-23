@@ -1,32 +1,32 @@
 package engine
 
 import (
-    "fmt"
+	"fmt"
 )
 
-type PrintCommand struct {
-    Arg string
+type printCommand struct {
+	Arg string
 }
 
-func (print PrintCommand) Execute(loop Handler) {
-    fmt.Println(print.Arg)
+func (print *printCommand) Execute(loop handler) {
+	fmt.Println(print.Arg)
 }
 
 type PrintcCommand struct {
-    Arg1 string
-    Arg2 int
+	Arg1 string
+	Arg2 int
 }
 
-func (pccPrintcCommand) Execute(handler Handler) {
-    res := pcc.Arg1
-    for i := 0; i < pcc.Arg2; i++ {
-        res = res + pcc.Arg1
-    }
-    handler.Post(&PrintCommand{Arg: res})
+func (pcc *PrintcCommand) Execute(Handler handler) {
+	res := pcc.Arg1
+	for i := 1; i < pcc.Arg2; i++ {
+		res = res + pcc.Arg1
+	}
+	Handler.Post(&printCommand{Arg: res})
 }
 
 type stopCommand struct{}
 
-func (s stopCommand) Execute(h Handler) {
-    h.(*EventLoop).stop = true
+func (s stopCommand) Execute(h handler) {
+	h.(*EventLoop).stop = true
 }

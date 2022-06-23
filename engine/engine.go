@@ -1,29 +1,30 @@
 package engine
 
 import (
+	"fmt"
 	"sync"
 )
 
-type Command interface {
-	Execute(handler Handler)
+type command interface {
+	Execute(handler handler)
 }
 
-type Handler interface {
-	Post(cmd Command)
+type handler interface {
+	Post(cmd command) error
 }
 
-type Queue struct {
+type queue struct {
 	sync.Mutex
-	cmdArray      []Command
+	cmdArray      []command
 	signalToAwait chan struct{}
 	awaiting      bool
 }
 
-func (q *Queue) push(command Command) {
+func (q *queue) push(Command command) {
 	q.Lock()
 	defer q.Unlock()
 
-	q.cmdArray = append(q.cmdArray, command)
+	q.cmdArray = append(q.cmdArray, Command)
 	if q.awaiting {
 		q.awaiting = false
 		q.signalToAwait <- struct{}{}
@@ -31,7 +32,7 @@ func (q *Queue) push(command Command) {
 
 }
 
-func (q *Queue) pull() Command {
+func (q *queue) pull() command {
 	q.Lock()
 	defer q.Unlock()
 
@@ -48,33 +49,38 @@ func (q *Queue) pull() Command {
 	return res
 }
 
-func (q *Queue) empty() bool {
+func (q *queue) empty() bool {
 	return len(q.cmdArray) == 0
 }
 
 type EventLoop struct {
-	cmdQ          *Queue
-	stopSignal  chan struct{}
-	stop bool
-  }
+	cmdQ       *queue
+	stopSignal chan struct{}
+	stop       bool
+}
 
-  func (l *EventLoop) Start() {
-	l.cmdQ = &Queue{signalToAwait: make(chan struct{})}
+func (l *EventLoop) Start() {
+	l.cmdQ = &queue{signalToAwait: make(chan struct{})}
 	l.stopSignal = make(chan struct{})
 	go func() {
-	  for !l.stop || !l.cmdQ.empty() {
-		cmd := l.cmdQ.pull()
-		cmd.Execute(l)
-	  }
-	  l.stopSignal <- struct{}{}
+		for !l.stop || !l.cmdQ.empty() {
+			cmd := l.cmdQ.pull()
+			cmd.Execute(l)
+		}
+		l.stopSignal <- struct{}{}
 	}()
-  }
-  
-  func (l *EventLoop) Post(cmd Command) {
+}
+
+func (l *EventLoop) Post(cmd command) error {
+	if l.stop == true {
+		return fmt.Errorf("Unexpected command after eventloop finish")
+	}
+
 	l.cmdQ.push(cmd)
-  }
-  
-  func (l *EventLoop) AwaitFinish() {
+	return nil
+}
+
+func (l *EventLoop) AwaitFinish() {
 	l.Post(stopCommand{})
-    <-l.stopSignal
-  }
+	<-l.stopSignal
+}

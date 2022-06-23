@@ -5,11 +5,11 @@ import (
 	"strings"
 )
 
-func Parse(toParse string) Command {
+func Parse(toParse string) command {
 	args := strings.Fields(toParse)
 
 	if len(args) < 2 {
-		return &PrintCommand{"syntax error: not enough arguments"}
+		return &printCommand{"syntax error: not enough arguments"}
 	}
 
 	cmd := args[0]
@@ -18,16 +18,16 @@ func Parse(toParse string) Command {
 	switch cmd {
 	case "print":
 		message := strings.Join(cmdargs, " ")
-		return &PrintCommand{message}
+		return &printCommand{message}
 
 	case "printc":
 		if len(cmdargs) != 2 {
-			return &PrintCommand{"syntax error: invalid arguments"}
+			return &printCommand{"syntax error: invalid arguments"}
 		}
 		tempvar, _ := strconv.Atoi(cmdargs[1])
 		return &PrintcCommand{cmdargs[0], tempvar}
 
 	default:
-		return &PrintCommand{"syntax error: invalid command"}
+		return &printCommand{"syntax error: invalid command"}
 	}
 }

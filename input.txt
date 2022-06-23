@@ -1,4 +1,4 @@
 print aboba text
-printc dfgdfgg 3
-pritnc qwerwer 5
 print asodfkdfgodfp guygnkk
+printc dfgdfgg 3
+printc q 5
